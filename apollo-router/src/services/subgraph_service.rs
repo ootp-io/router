@@ -132,7 +132,7 @@ impl SubgraphService {
             .with_tls_config(tls_config)
             .https_or_http()
             .enable_http1()
-            .enable_http2()
+            //.enable_http2()
             .wrap_connector(http_connector);
 
         Self {
