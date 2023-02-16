@@ -13,6 +13,7 @@ executors:
   amd_linux_test: &amd_linux_test_executor
     docker:
       - image: cimg/base:stable
+      - image: cimg/redis:6.2.6
     resource_class: xlarge
   arm_linux_build: &arm_linux_build_executor
     machine:
@@ -80,7 +81,7 @@ commands:
           name: Update and install dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install -y libssl-dev cmake
+            sudo apt-get install -y libssl-dev libdw-dev cmake
       - install_minimal_rust
   linux_amd_install_baseline:
     steps:
@@ -379,6 +380,7 @@ jobs:
             - linux_amd_install_baseline
             - xtask_check_compliance:
                 os: linux_amd
+
   test:
     environment:
       <<: *common_job_environment
@@ -610,7 +612,7 @@ jobs:
             cd artifacts && sha1sum *.tar.gz > sha1sums.txt
       - run:
           command: >
-            gh release create $VERSION --notes-file NEXT_CHANGELOG.md --title $VERSION artifacts/*
+            gh release create $VERSION --notes-file /dev/null --title $VERSION artifacts/*
       - setup_remote_docker:
           version: 20.10.11
           docker_layer_caching: true
@@ -670,15 +672,10 @@ workflows:
             parameters:
               platform: [amd_linux_build]
 
-      # check-compliance is disabled for now because it is flaky
-      # `cargo about` seems to be non-deterministic and sometimes
-      # produces a different licenses.html file even though dependencies haven’t changed.
-      # For now, we’ll re-generate it for each release instead. (See RELEASE_CHECKLIST.md)
-
-      # - check_compliance:
-      #     matrix:
-      #       parameters:
-      #         platform: [linux]
+      - check_compliance:
+          matrix:
+            parameters:
+              platform: [amd_linux_build]
 
       - test_updated:
           requires:
